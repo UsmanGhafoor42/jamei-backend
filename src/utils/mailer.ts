@@ -9,13 +9,14 @@ export const sendResetEmail = async (to: string, token: string) => {
     },
   });
 
-  const resetUrl = `https://jamie-nine.vercel.app/reset-password?token=${token}`;
+  const resetUrl = `http://localhost:3000/auth/reset-password?token=${token}`;
+  // const resetUrl = `https://jamie-nine.vercel.app/reset-password?token=${token}`;
 
   const mailOptions = {
     from: "Hot Market Design DTF <no-reply@dtfstickers.com>",
     to,
     subject: "Password Reset Request",
-    html: `<p>You requested a password reset.</p><p><a href="${resetUrl}">Click here to reset</a></p>`,
+    html: `<p>You requested a password reset.</p><p><a href="${resetUrl}">Click here to reset</a> your password.</p>`,
   };
 
   await transporter.sendMail(mailOptions);

@@ -18,7 +18,15 @@ export const register = async (req: Request, res: Response) => {
     // Explicitly cast newUser._id to string for type safety
     const token = generateToken(String(newUser._id));
 
-    res.status(201).json({ user: newUser, token });
+    res
+      .cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      })
+      .status(201)
+      .json({ user: newUser });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err });
   }
@@ -36,7 +44,16 @@ export const login = async (req: Request, res: Response) => {
 
     // Explicitly cast user._id to string for type safety
     const token = generateToken(String(user._id));
-    res.status(200).json({ user, token });
+    res
+      .cookie("token", token, {
+        httpOnly: true,
+        // secure: process.env.NODE_ENV === "production",
+        secure: false,
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      })
+      .status(200)
+      .json({ user });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err });
   }
@@ -79,5 +96,27 @@ export const resetPassword = async (req: Request, res: Response) => {
     res.status(200).json({ message: "Password reset successful" });
   } catch (err) {
     res.status(500).json({ message: "Error resetting password", error: err });
+  }
+};
+
+export const logout = (req: Request, res: Response) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    // secure: process.env.NODE_ENV === "production",
+    secure: false,
+    sameSite: "lax",
+  });
+  res.status(200).json({ message: "Logged out successfully", user: null });
+};
+
+export const me = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    console.log(userId);
+    const user = await User.findById(userId).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
   }
 };

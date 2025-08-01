@@ -4,7 +4,10 @@ import {
   login,
   forgotPassword,
   resetPassword,
+  logout,
+  me,
 } from "../controllers/auth.controller";
+import { protect } from "../middlewares/auth.middleware";
 
 const router = express.Router();
 
@@ -119,5 +122,31 @@ router.post("/forgot-password", forgotPassword);
  *         description: Invalid or expired token
  */
 router.post("/reset-password", resetPassword);
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Logout user (clear JWT cookie)
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ */
+router.post("/logout", logout);
+
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Get current authenticated user
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Current user info
+ *       401:
+ *         description: Not authorized
+ */
+router.get("/me", protect, me);
 
 export default router;
