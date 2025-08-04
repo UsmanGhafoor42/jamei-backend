@@ -16,7 +16,7 @@ export const register = async (req: Request, res: Response) => {
     const hashed = await bcrypt.hash(password, 10);
     const newUser = await User.create({ name, email, password: hashed });
     // Explicitly cast newUser._id to string for type safety
-    const token = generateToken(String(newUser._id));
+    const token = generateToken(String(newUser._id), newUser.role);
 
     res
       .cookie("token", token, {
@@ -43,7 +43,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Invalid credentials" });
 
     // Explicitly cast user._id to string for type safety
-    const token = generateToken(String(user._id));
+    const token = generateToken(String(user._id), user.role);
     res
       .cookie("token", token, {
         httpOnly: true,
