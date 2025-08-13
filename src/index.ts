@@ -14,13 +14,29 @@ import apparelProductRoutes from "./routes/apparelProduct.routes";
 dotenv.config();
 const app = express();
 
+// app.use(
+//   cors({
+//     origin: "*",
+//     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+//     // origin: "http://localhost:3000",
+//     allowedHeaders: ["Content-Type", "Authorization"],
+//     credentials: true,
+//   })
+// );
 app.use(
   cors({
-    origin: "*",
-    // origin: "http://localhost:3000",
-    credentials: true,
+    origin: (origin, callback) => {
+      // If request has no origin (like mobile apps or curl), allow it
+      if (!origin) return callback(null, true);
+      // Echo back the origin to allow credentials from any domain
+      return callback(null, origin);
+    },
+    credentials: true, // ✅ allow cookies / authorization headers
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 app.use(express.json());
 app.use(cookieParser());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
