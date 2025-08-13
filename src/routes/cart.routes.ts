@@ -89,7 +89,8 @@ const router = express.Router();
  *       401:
  *         description: Not authorized
  */
-router.post("/add", protect, upload.single("image"), addToCart);
+// router.post("/add", protect, upload.single("image"), addToCart);
+router.post("/add", protect, upload, addToCart);
 
 /**
  * @swagger

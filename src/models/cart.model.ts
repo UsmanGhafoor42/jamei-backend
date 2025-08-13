@@ -23,8 +23,8 @@ const cartSchema = new Schema<CartItem>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
     title: { type: String, required: true },
-    imageUrl: { type: String, required: true },
-    stikersImgeUrl: { type: [String], default: [] },
+    imageUrl: { type: String, required: false },
+    stikersImgeUrl: { type: [String], required: false },
     stikersName: { type: [String], default: [] },
     colorsName: { type: String },
     colorsCode: { type: String },
@@ -32,7 +32,7 @@ const cartSchema = new Schema<CartItem>(
     sizeAndQuantity: { type: Schema.Types.Mixed }, // for object like { S: 2, M: 1 }
     options: { type: [String], default: [] },
     quantity: { type: Number },
-    total: { type: Number, required: true },
+    total: { type: Number, required: false },
     orderNotes: { type: String },
   },
   { timestamps: true }

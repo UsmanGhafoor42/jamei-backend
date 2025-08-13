@@ -26,4 +26,7 @@ const fileFilter = (_req: any, file: any, cb: any) => {
   cb(null, allowedTypes.includes(file.mimetype));
 };
 
-export const upload = multer({ storage, fileFilter });
+export const upload = multer({ storage, fileFilter }).fields([
+  { name: "image", maxCount: 1 }, // main product image
+  { name: "imprintFiles", maxCount: 10 }, // imprint/sticker images
+]);
