@@ -16,35 +16,51 @@ const app = express();
 
 // app.use(
 //   cors({
-//     origin: "*",
+//     origin: (origin, callback) => {
+//       // If request has no origin (like mobile apps or curl), allow it
+//       if (!origin) return callback(null, true);
+//       // Echo back the origin to allow credentials from any domain
+//       return callback(null, origin);
+//     },
+//     credentials: true, // ✅ allow cookies / authorization headers
 //     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-//     // origin: "http://localhost:3000",
 //     allowedHeaders: ["Content-Type", "Authorization"],
-//     credentials: true,
 //   })
 // );
+
+// // Preflight
+// app.options(
+//   "*",
+//   cors({
+//     origin: (origin, callback) => {
+//       if (!origin) return callback(null, true);
+//       return callback(null, origin);
+//     },
+//     credentials: true,
+//     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+//     allowedHeaders: ["Content-Type", "Authorization"],
+//   })
+// );
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://hotmarketdtf.com",
+  "https://www.hotmarketdtf.com",
+];
+
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // If request has no origin (like mobile apps or curl), allow it
-      if (!origin) return callback(null, true);
-      // Echo back the origin to allow credentials from any domain
-      return callback(null, origin);
-    },
-    credentials: true, // ✅ allow cookies / authorization headers
+    origin: allowedOrigins,
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Preflight
 app.options(
   "*",
   cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      return callback(null, origin);
-    },
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
