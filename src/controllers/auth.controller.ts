@@ -21,9 +21,11 @@ export const register = async (req: Request, res: Response) => {
     res
       .cookie("token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        // sameSite: "lax",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        // secure: process.env.NODE_ENV === "production",
+        // // sameSite: "lax",
+        // sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: true, // ✅ Must be true for HTTPS
+        sameSite: "none", // ✅ Required for cross-origin
         maxAge: 7 * 24 * 60 * 60 * 1000,
       })
       .status(201)
@@ -49,9 +51,11 @@ export const login = async (req: Request, res: Response) => {
       .cookie("token", token, {
         httpOnly: true,
         // secure: process.env.NODE_ENV === "production",
-        secure: false,
-        // sameSite: "lax",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        // secure: false,
+        // // sameSite: "lax",
+        // sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: true, // ✅ Must be true for HTTPS
+        sameSite: "none", // ✅ Required for cross-origin
         maxAge: 7 * 24 * 60 * 60 * 1000,
       })
       .status(200)
@@ -105,9 +109,11 @@ export const logout = (req: Request, res: Response) => {
   res.clearCookie("token", {
     httpOnly: true,
     // secure: process.env.NODE_ENV === "production",
-    secure: false,
-    // sameSite: "lax",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    // secure: false,
+    // // sameSite: "lax",
+    // sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: true, // ✅ Must be true for HTTPS
+    sameSite: "none", // ✅ Required for cross-origin
   });
   res.status(200).json({ message: "Logged out successfully", user: null });
 };
