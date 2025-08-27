@@ -1,6 +1,11 @@
 import express from "express";
 import { protect } from "../middlewares/auth.middleware";
-import { addToCart, getUserCart } from "../controllers/cart.controller";
+import {
+  addToCart,
+  getUserCart,
+  deleteUserCart,
+  deleteMultipleCartItems,
+} from "../controllers/cart.controller";
 import { upload } from "../middlewares/upload";
 
 const router = express.Router();
@@ -107,5 +112,119 @@ router.post("/add", protect, upload, addToCart);
  *         description: Not authorized
  */
 router.get("/mine", protect, getUserCart);
+
+/**
+ * @swagger
+ * /cart/delete/{userId}/{cartItemId}:
+ *   delete:
+ *     summary: Delete a cart item
+ *     tags: [Cart]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the user who owns the cart item
+ *       - in: path
+ *         name: cartItemId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the cart item to delete
+ *     responses:
+ *       200:
+ *         description: Cart item deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 deletedItem:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     title:
+ *                       type: string
+ *       400:
+ *         description: Invalid parameters or cart item ID format
+ *       401:
+ *         description: Not authorized
+ *       403:
+ *         description: Forbidden - user can only delete their own cart items
+ *       404:
+ *         description: Cart item not found
+ *       500:
+ *         description: Internal server error
+ */
+router.delete("/delete/:userId/:cartItemId", protect, deleteUserCart);
+
+/**
+ * @swagger
+ * /cart/delete-multiple/{userId}:
+ *   delete:
+ *     summary: Delete multiple cart items
+ *     tags: [Cart]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the user who owns the cart items
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - cartItemIds
+ *             properties:
+ *               cartItemIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of cart item IDs to delete
+ *     responses:
+ *       200:
+ *         description: Cart items deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 deletedCount:
+ *                   type: number
+ *                 deletedItems:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       title:
+ *                         type: string
+ *       400:
+ *         description: Invalid parameters or cart item ID format
+ *       401:
+ *         description: Not authorized
+ *       403:
+ *         description: Forbidden - user can only delete their own cart items
+ *       404:
+ *         description: No cart items found
+ *       500:
+ *         description: Internal server error
+ */
+router.delete("/delete-multiple/:userId", protect, deleteMultipleCartItems);
 
 export default router;

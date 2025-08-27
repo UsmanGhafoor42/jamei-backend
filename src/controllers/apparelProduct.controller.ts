@@ -156,6 +156,160 @@ export const getSingleProduct = async (req: Request, res: Response) => {
   }
 };
 
+// Update a single apparel product
+export const updateProduct = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const productId = id;
+
+    // Check if product exists
+    const existingProduct = await ApparelProduct.findById(id);
+    if (!existingProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Access uploaded files
+    const productImageFile = (req.files as any)?.productImage?.[0];
+    const colorSwatchFiles = (req.files as any)?.colorSwatchImages || [];
+
+    // Build base host URL
+    const host = req.get("host")?.includes("localhost")
+      ? `http://localhost:5000`
+      : `${req.protocol}://${req.get("host")}`;
+
+    // Prepare colorSwatches with image URLs
+    let colorSwatches = existingProduct.colorSwatches || [];
+    if (req.body.colorSwatches) {
+      const parsedColorSwatches = JSON.parse(req.body.colorSwatches);
+      colorSwatches = parsedColorSwatches.map((swatch: any, idx: number) => ({
+        ...swatch,
+        image: colorSwatchFiles[idx]
+          ? `${host}/uploads/apparel/${productId}/${colorSwatchFiles[idx].filename}`
+          : swatch.image || swatch.image, // Keep existing image if no new file
+      }));
+    }
+
+    // Prepare productImage URL
+    let productImage = existingProduct.productImage;
+    if (productImageFile) {
+      productImage = `${host}/uploads/apparel/${productId}/${productImageFile.filename}`;
+    }
+
+    // Build update data
+    const updateData: any = {
+      ...req.body,
+      productImage,
+      colorSwatches,
+    };
+
+    // Parse JSON fields if they exist
+    if (req.body.details) {
+      updateData.details = JSON.parse(req.body.details);
+    }
+    if (req.body.finishingMeasurementTable) {
+      updateData.finishingMeasurementTable = JSON.parse(
+        req.body.finishingMeasurementTable
+      );
+    }
+    if (req.body.prices) {
+      updateData.prices = JSON.parse(req.body.prices);
+    }
+
+    // Update the product
+    const updatedProduct = await ApparelProduct.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      message: "Product updated successfully",
+      product: updatedProduct,
+    });
+  } catch (err) {
+    console.error("Update Product Error:", err);
+    res.status(500).json({ message: "Error updating product", error: err });
+  }
+};
+
+// Patch (partial update) a single apparel product
+export const patchProduct = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const productId = id;
+
+    // Check if product exists
+    const existingProduct = await ApparelProduct.findById(id);
+    if (!existingProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Access uploaded files
+    const productImageFile = (req.files as any)?.productImage?.[0];
+    const colorSwatchFiles = (req.files as any)?.colorSwatchImages || [];
+
+    // Build base host URL
+    const host = req.get("host")?.includes("localhost")
+      ? `http://localhost:5000`
+      : `${req.protocol}://${req.get("host")}`;
+
+    // Build update data - only include fields that are provided
+    const updateData: any = {};
+
+    // Handle text fields
+    if (req.body.title !== undefined) updateData.title = req.body.title;
+    if (req.body.description !== undefined)
+      updateData.description = req.body.description;
+
+    // Handle product image
+    if (productImageFile) {
+      updateData.productImage = `${host}/uploads/apparel/${productId}/${productImageFile.filename}`;
+    }
+
+    // Handle color swatches
+    if (req.body.colorSwatches) {
+      const parsedColorSwatches = JSON.parse(req.body.colorSwatches);
+      updateData.colorSwatches = parsedColorSwatches.map(
+        (swatch: any, idx: number) => ({
+          ...swatch,
+          image: colorSwatchFiles[idx]
+            ? `${host}/uploads/apparel/${productId}/${colorSwatchFiles[idx].filename}`
+            : swatch.image || swatch.image,
+        })
+      );
+    }
+
+    // Handle JSON fields
+    if (req.body.details !== undefined) {
+      updateData.details = JSON.parse(req.body.details);
+    }
+    if (req.body.finishingMeasurementTable !== undefined) {
+      updateData.finishingMeasurementTable = JSON.parse(
+        req.body.finishingMeasurementTable
+      );
+    }
+    if (req.body.prices !== undefined) {
+      updateData.prices = JSON.parse(req.body.prices);
+    }
+
+    // Update the product with only provided fields
+    const updatedProduct = await ApparelProduct.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      message: "Product partially updated successfully",
+      product: updatedProduct,
+      updatedFields: Object.keys(updateData),
+    });
+  } catch (err) {
+    console.error("Patch Product Error:", err);
+    res.status(500).json({ message: "Error updating product", error: err });
+  }
+};
+
 // Dynamic destination based on productId
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
