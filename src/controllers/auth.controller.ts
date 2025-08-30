@@ -26,9 +26,9 @@ export const register = async (req: Request, res: Response) => {
         // sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         // secure: true, // ✅ Must be true for HTTPS
         // sameSite: "none", // ✅ Required for cross-origin
-        secure: true, // true on live
-        sameSite: "none", // required for cross-origin
-        domain: ".hotmarketdtf.com",
+        // secure: true, // true on live
+        // sameSite: "none", // required for cross-origin
+        // domain: ".hotmarketdtf.com",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       })
       .status(201)
@@ -59,9 +59,9 @@ export const login = async (req: Request, res: Response) => {
         // sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
         // secure: true, // ✅ Must be true for HTTPS
         // sameSite: "none", // ✅ Required for cross-origin
-        secure: true, // true on live
-        sameSite: "none", // required for cross-origin
-        domain: ".hotmarketdtf.com",
+        // secure: true, // true on live
+        // sameSite: "none", // required for cross-origin
+        // domain: ".hotmarketdtf.com",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       })
       .status(200)
@@ -120,9 +120,9 @@ export const logout = (req: Request, res: Response) => {
     // sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     // secure: true, // ✅ Must be true for HTTPS
     // sameSite: "none", // ✅ Required for cross-origin
-    secure: true, // true on live
-    sameSite: "none", // required for cross-origin
-    domain: ".hotmarketdtf.com",
+    // secure: true, // true on live
+    // sameSite: "none", // required for cross-origin
+    // domain: ".hotmarketdtf.com",
   });
   res.status(200).json({ message: "Logged out successfully", user: null });
 };

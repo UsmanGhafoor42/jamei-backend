@@ -10,6 +10,8 @@ import { setupSwagger } from "./config/swagger";
 import { logger } from "./utils/logger";
 import cookieParser from "cookie-parser";
 import apparelProductRoutes from "./routes/apparelProduct.routes";
+import paymentRoutes from "./routes/payment.routes";
+import adminOrderRoutes from "./routes/adminOrder.routes";
 
 dotenv.config();
 const app = express();
@@ -105,6 +107,8 @@ setupSwagger(app);
 app.use("/api/auth", authRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/apparel", apparelProductRoutes);
+app.use("/api/payment", paymentRoutes);
+app.use("/api/admin", adminOrderRoutes);
 
 const PORT = process.env.PORT || 5000;
 
