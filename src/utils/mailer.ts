@@ -9,7 +9,7 @@ export const sendResetEmail = async (to: string, token: string) => {
     },
   });
 
-  const resetUrl = `http://localhost:3000/auth/reset-password?token=${token}`;
+  const resetUrl = `https://hotmarketdtf.com/auth/reset-password?token=${token}`;
   // const resetUrl = `https://jamie-nine.vercel.app/reset-password?token=${token}`;
 
   const mailOptions = {
