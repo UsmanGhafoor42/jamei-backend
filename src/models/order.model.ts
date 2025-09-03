@@ -101,8 +101,8 @@ const orderSchema = new Schema<IOrder>(
     },
     orderNumber: {
       type: String,
-      required: true,
       unique: true,
+      // Remove required: true since it's generated automatically
     },
     orderDate: {
       type: Date,

@@ -5,6 +5,10 @@ import {
   getUserOrders,
   getOrderDetails,
   reorderItems,
+  testPaymentConfig,
+  testAuthorizeNetConnection,
+  testDatabase,
+  testAuthorizeNetSDK,
 } from "../controllers/payment.controller";
 
 const router = express.Router();
@@ -200,5 +204,83 @@ router.get("/orders/:orderId", protect, getOrderDetails);
  *         description: Internal server error
  */
 router.post("/orders/:orderId/reorder", protect, reorderItems);
+
+/**
+ * @swagger
+ * /payment/test-config:
+ *   get:
+ *     summary: Test payment configuration
+ *     tags: [Payment]
+ *     responses:
+ *       200:
+ *         description: Payment configuration status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 config:
+ *                   type: object
+ *                 ready:
+ *                   type: boolean
+ */
+router.get("/test-config", testPaymentConfig);
+
+/**
+ * @swagger
+ * /payment/test-authorize:
+ *   get:
+ *     summary: Test Authorize.net connection
+ *     tags: [Payment]
+ *     responses:
+ *       200:
+ *         description: Authorize.net connection test result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 transactionId:
+ *                   type: string
+ *       400:
+ *         description: Test failed
+ *       500:
+ *         description: Connection error
+ */
+router.get("/test-authorize", testAuthorizeNetConnection);
+
+/**
+ * @swagger
+ * /payment/test-database:
+ *   get:
+ *     summary: Test database connection and operations
+ *     tags: [Payment]
+ *     responses:
+ *       200:
+ *         description: Database test result
+ *       500:
+ *         description: Database test failed
+ */
+router.get("/test-database", testDatabase);
+
+/**
+ * @swagger
+ * /payment/test-sdk:
+ *   get:
+ *     summary: Test Authorize.net SDK functionality
+ *     tags: [Payment]
+ *     responses:
+ *       200:
+ *         description: SDK test result
+ *       500:
+ *         description: SDK test failed
+ */
+router.get("/test-sdk", testAuthorizeNetSDK);
 
 export default router;
