@@ -209,43 +209,50 @@ const orderSchema = new Schema<IOrder>(
   }
 );
 
-// Generate unique order number
+// Atomic counter to avoid duplicate orderNumber under concurrency
+const orderCounterSchema = new Schema<{ dateKey: string; seq: number }>(
+  {
+    dateKey: { type: String, required: true, unique: true }, // e.g., ORD250904
+    seq: { type: Number, required: true, default: 0 },
+  },
+  { collection: "order_counters" }
+);
+const OrderCounter = mongoose.model("OrderCounter", orderCounterSchema);
+
+// Generate unique order number (atomic)
 orderSchema.pre("save", async function (next) {
-  if (this.isNew && !this.orderNumber) {
-    const date = new Date();
-    const year = date.getFullYear().toString().slice(-2);
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const day = date.getDate().toString().padStart(2, "0");
+  try {
+    if (this.isNew && !this.orderNumber) {
+      const date = new Date();
+      const year = date.getFullYear().toString().slice(-2);
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const day = date.getDate().toString().padStart(2, "0");
 
-    // Get count of orders for today
-    const todayStart = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate()
-    );
-    const todayEnd = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate() + 1
-    );
+      const prefix = `ORD${year}${month}${day}`; // e.g., ORD250904
 
-    const orderCount = await mongoose.model("Order").countDocuments({
-      createdAt: { $gte: todayStart, $lt: todayEnd },
-    });
+      // Atomically increment daily sequence to avoid duplicates
+      const counter = await OrderCounter.findOneAndUpdate(
+        { dateKey: prefix },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
 
-    const sequence = (orderCount + 1).toString().padStart(3, "0");
-    this.orderNumber = `ORD${year}${month}${day}${sequence}`;
+      const sequence = String(counter.seq).padStart(3, "0");
+      this.orderNumber = `${prefix}${sequence}`;
+    }
+
+    // Add to status history when status changes
+    if (this.isModified("status")) {
+      this.statusHistory.push({
+        status: this.status,
+        timestamp: new Date(),
+      });
+    }
+
+    next();
+  } catch (err) {
+    next(err as any);
   }
-
-  // Add to status history when status changes
-  if (this.isModified("status")) {
-    this.statusHistory.push({
-      status: this.status,
-      timestamp: new Date(),
-    });
-  }
-
-  next();
 });
 
 export default mongoose.model<IOrder>("Order", orderSchema);
