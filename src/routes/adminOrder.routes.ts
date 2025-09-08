@@ -8,6 +8,7 @@ import {
   updateShippingInfo,
   getOrderStats,
   exportOrders,
+  exportSingleOrder,
 } from "../controllers/adminOrder.controller";
 
 const router = express.Router();
@@ -377,5 +378,36 @@ router.get("/orders/stats", protect, getOrderStats);
  *         description: Internal server error
  */
 router.get("/orders/export", protect, exportOrders);
+
+/**
+ * @swagger
+ * /admin/orders/{orderId}/export:
+ *   get:
+ *     summary: Export a single order to CSV (includes image URLs)
+ *     tags: [AdminOrders]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Order ID
+ *     responses:
+ *       200:
+ *         description: CSV file download
+ *         content:
+ *           text/csv:
+ *             schema:
+ *               type: string
+ *       404:
+ *         description: Order not found
+ *       401:
+ *         description: Not authorized
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/orders/:orderId/export", protect, exportSingleOrder);
 
 export default router;

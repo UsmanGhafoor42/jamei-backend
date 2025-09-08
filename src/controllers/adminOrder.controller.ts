@@ -350,3 +350,119 @@ export const exportOrders = async (req: Request, res: Response) => {
     });
   }
 };
+
+// Export a single order to CSV (including item image URLs)
+export const exportSingleOrder = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await Order.findById(orderId).populate(
+      "user",
+      "email firstName lastName"
+    );
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const preferredBase = process.env.BACKEND_BASE_URL;
+    const forwardedProto =
+      (req.headers["x-forwarded-proto"] as string) || req.protocol;
+    const host = req.get("host");
+    const runtimeBase = `${forwardedProto}://${host}`;
+    const baseUrl = preferredBase || runtimeBase;
+
+    const toAbsoluteUrl = (url?: string) => {
+      if (!url) return "";
+      if (/^https?:\/\//i.test(url)) return url;
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      return `${baseUrl}/${url}`;
+    };
+
+    // Build CSV rows
+    const header = [
+      "Order Number",
+      "Order Date",
+      "Status",
+      "Customer Name",
+      "Customer Email",
+      "Customer Phone",
+      "Billing Street",
+      "Billing City",
+      "Billing State",
+      "Billing ZIP",
+      "Billing Country",
+      "Shipping Method",
+      "Shipping Street",
+      "Shipping City",
+      "Shipping State",
+      "Shipping ZIP",
+      "Shipping Country",
+      "Item Title",
+      "Item Quantity",
+      "Unit Price",
+      "Total Price",
+      "Size",
+      "Colors Name",
+      "Colors Code",
+      "Options",
+      "Order Notes",
+      "Item Image URL",
+      "Imprint Files",
+    ];
+
+    const escapeCsv = (value: unknown) => {
+      const str = value === undefined || value === null ? "" : String(value);
+      if (/[",\n]/.test(str)) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    };
+
+    const rows: string[] = [];
+    rows.push(header.map(escapeCsv).join(","));
+
+    for (const item of order.items) {
+      const row = [
+        order.orderNumber,
+        order.orderDate ? order.orderDate.toISOString() : "",
+        order.status,
+        `${order.customerInfo.firstName} ${order.customerInfo.lastName}`,
+        order.customerInfo.email,
+        order.customerInfo.phone || "",
+        order.customerInfo.address.street,
+        order.customerInfo.address.city,
+        order.customerInfo.address.state,
+        order.customerInfo.address.zipCode,
+        order.customerInfo.address.country,
+        order.shipping.method,
+        order.shipping.address.street,
+        order.shipping.address.city,
+        order.shipping.address.state,
+        order.shipping.address.zipCode,
+        order.shipping.address.country,
+        item.title,
+        item.quantity,
+        item.unitPrice,
+        item.totalPrice,
+        item.size || "",
+        item.colorsName || "",
+        item.colorsCode || "",
+        (item.options || []).join(" | "),
+        item.orderNotes || "",
+        toAbsoluteUrl(item.imageUrl),
+        (item.imprintFiles || []).map(toAbsoluteUrl).join(" | "),
+      ];
+      rows.push(row.map(escapeCsv).join(","));
+    }
+
+    const filename = `order-${order.orderNumber || order.id}.csv`;
+    res.setHeader("Content-Type", "text/csv;charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+
+    res.send(rows.join("\n"));
+  } catch (error) {
+    console.error("Error exporting single order:", error);
+    res.status(500).json({ message: "Error exporting order" });
+  }
+};
