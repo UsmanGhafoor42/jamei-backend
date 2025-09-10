@@ -13,6 +13,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@types/puppeteer": "^5.4.7",
     "authorizenet": "^1.0.10",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
@@ -23,6 +24,7 @@
     "mongoose": "^8.16.4",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.5",
+    "puppeteer": "^24.19.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
   },

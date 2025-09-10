@@ -9,6 +9,8 @@ import {
   getOrderStats,
   exportOrders,
   exportSingleOrder,
+  downloadOrderPDF,
+  testPDF,
 } from "../controllers/adminOrder.controller";
 
 const router = express.Router();
@@ -409,5 +411,58 @@ router.get("/orders/export", protect, exportOrders);
  *         description: Internal server error
  */
 router.get("/orders/:orderId/export", protect, exportSingleOrder);
+
+/**
+ * @swagger
+ * /admin/orders/{orderId}/pdf:
+ *   get:
+ *     summary: Download a single order as PDF (includes images)
+ *     tags: [AdminOrders]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: orderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Order ID
+ *     responses:
+ *       200:
+ *         description: PDF file download
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       404:
+ *         description: Order not found
+ *       401:
+ *         description: Not authorized
+ *       500:
+ *         description: Internal server error
+ */
+router.get("/orders/:orderId/pdf", protect, downloadOrderPDF);
+
+/**
+ * @swagger
+ * /admin/test-pdf:
+ *   get:
+ *     summary: Test PDF generation (simple test)
+ *     tags: [AdminOrders]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Test PDF file download
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       500:
+ *         description: PDF generation failed
+ */
+router.get("/test-pdf", protect, testPDF);
 
 export default router;
