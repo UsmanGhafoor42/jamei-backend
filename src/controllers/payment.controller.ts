@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Order from "../models/order.model";
 import CartItem from "../models/cart.model";
 import { APIContracts, APIControllers } from "authorizenet";
+import { sendOrderConfirmationEmail } from "../utils/mailer";
 
 interface PaymentResult {
   success: boolean;
@@ -348,6 +349,20 @@ const processPaymentDirect = async (
 
       if (orderResult.success) {
         console.log("=== ORDER CREATED SUCCESSFULLY ===");
+
+        // Send order confirmation email
+        try {
+          console.log("Sending order confirmation email...");
+          await sendOrderConfirmationEmail(
+            customerInfo.email,
+            orderResult.order
+          );
+          console.log("Order confirmation email sent successfully");
+        } catch (emailError) {
+          console.error("Failed to send order confirmation email:", emailError);
+          // Don't fail the order creation if email fails
+        }
+
         return {
           success: true,
           transactionId: paymentResult.transactionId,

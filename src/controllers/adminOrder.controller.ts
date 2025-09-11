@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Order from "../models/order.model";
 import puppeteer from "puppeteer";
+import { sendOrderStatusUpdateEmail } from "../utils/mailer";
 
 // Get all orders for admin (with pagination and filtering)
 export const getAllOrders = async (req: Request, res: Response) => {
@@ -147,6 +148,24 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       return res.status(404).json({
         message: "Order not found",
       });
+    }
+
+    // Send status update email to customer
+    try {
+      console.log("Sending order status update email...");
+      await sendOrderStatusUpdateEmail(order.customerInfo.email, {
+        orderNumber: order.orderNumber,
+        status: order.status,
+        customerInfo: {
+          firstName: order.customerInfo.firstName,
+          lastName: order.customerInfo.lastName,
+        },
+        note: note,
+      });
+      console.log("Order status update email sent successfully");
+    } catch (emailError) {
+      console.error("Failed to send order status update email:", emailError);
+      // Don't fail the status update if email fails
     }
 
     res.json({
@@ -485,9 +504,9 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
     }
 
     console.log(`Order found: ${order.orderNumber}`);
-    
+
     // Check if we should include images (default: true)
-    const includeImages = req.query.images !== 'false';
+    const includeImages = req.query.images !== "false";
 
     const preferredBase = process.env.BACKEND_BASE_URL;
     const forwardedProto =
@@ -510,7 +529,7 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
         images.push({
           url: toAbsoluteUrl(item.imageUrl),
           alt: item.title,
-          type: 'product'
+          type: "product",
         });
       }
       if (item.imprintFiles && item.imprintFiles.length > 0) {
@@ -518,7 +537,7 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
           images.push({
             url: toAbsoluteUrl(file),
             alt: `Imprint ${index + 1}`,
-            type: 'imprint'
+            type: "imprint",
           });
         });
       }
@@ -863,19 +882,33 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
                     </div>
                     <div class="info-row">
                         <span class="info-label">Order Date:</span>
-                        <span class="info-value">${order.orderDate ? order.orderDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</span>
+                        <span class="info-value">${
+                          order.orderDate
+                            ? order.orderDate.toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })
+                            : "N/A"
+                        }</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Status:</span>
-                        <span class="status-badge status-${order.status}">${order.status.replace('_', ' ')}</span>
+                        <span class="status-badge status-${
+                          order.status
+                        }">${order.status.replace("_", " ")}</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Payment:</span>
-                        <span class="info-value">${order.payment.status} - ${order.payment.method}</span>
+                        <span class="info-value">${order.payment.status} - ${
+      order.payment.method
+    }</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Transaction ID:</span>
-                        <span class="info-value">${order.payment.transactionId}</span>
+                        <span class="info-value">${
+                          order.payment.transactionId
+                        }</span>
                     </div>
                 </div>
                 
@@ -883,22 +916,34 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
                     <h3>Customer Information</h3>
                     <div class="info-row">
                         <span class="info-label">Name:</span>
-                        <span class="info-value">${order.customerInfo.firstName} ${order.customerInfo.lastName}</span>
+                        <span class="info-value">${
+                          order.customerInfo.firstName
+                        } ${order.customerInfo.lastName}</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Email:</span>
-                        <span class="info-value">${order.customerInfo.email}</span>
+                        <span class="info-value">${
+                          order.customerInfo.email
+                        }</span>
                     </div>
-                    ${order.customerInfo.phone ? `
+                    ${
+                      order.customerInfo.phone
+                        ? `
                     <div class="info-row">
                         <span class="info-label">Phone:</span>
                         <span class="info-value">${order.customerInfo.phone}</span>
                     </div>
-                    ` : ''}
+                    `
+                        : ""
+                    }
                     <div class="info-row">
                         <span class="info-label">Address:</span>
-                        <span class="info-value">${order.customerInfo.address.street}<br>
-                        ${order.customerInfo.address.city}, ${order.customerInfo.address.state} ${order.customerInfo.address.zipCode}<br>
+                        <span class="info-value">${
+                          order.customerInfo.address.street
+                        }<br>
+                        ${order.customerInfo.address.city}, ${
+      order.customerInfo.address.state
+    } ${order.customerInfo.address.zipCode}<br>
                         ${order.customerInfo.address.country}</span>
                     </div>
                 </div>
@@ -909,16 +954,24 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
                         <span class="info-label">Method:</span>
                         <span class="info-value">${order.shipping.method}</span>
                     </div>
-                    ${order.shipping.trackingNumber ? `
+                    ${
+                      order.shipping.trackingNumber
+                        ? `
                     <div class="info-row">
                         <span class="info-label">Tracking:</span>
                         <span class="info-value">${order.shipping.trackingNumber}</span>
                     </div>
-                    ` : ''}
+                    `
+                        : ""
+                    }
                     <div class="info-row">
                         <span class="info-label">Address:</span>
-                        <span class="info-value">${order.shipping.address.street}<br>
-                        ${order.shipping.address.city}, ${order.shipping.address.state} ${order.shipping.address.zipCode}<br>
+                        <span class="info-value">${
+                          order.shipping.address.street
+                        }<br>
+                        ${order.shipping.address.city}, ${
+      order.shipping.address.state
+    } ${order.shipping.address.zipCode}<br>
                         ${order.shipping.address.country}</span>
                     </div>
                 </div>
@@ -938,44 +991,89 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
                         </tr>
                     </thead>
                     <tbody>
-                        ${order.items.map(item => `
+                        ${order.items
+                          .map(
+                            (item) => `
                         <tr>
                             <td>
                                 <div class="image-container">
                                     ${(() => {
-                                        const images = getItemImages(item);
-                                        if (includeImages && images.length > 0) {
-                                            return images.map(img => 
-                                                `<img src="${img.url}" alt="${img.alt}" class="item-image" onerror="this.style.display='none';" />`
-                                            ).join('');
-                                        }
-                                        return '<div class="no-image">No Image<br>Available</div>';
+                                      const images = getItemImages(item);
+                                      if (includeImages && images.length > 0) {
+                                        return images
+                                          .map(
+                                            (img) =>
+                                              `<img src="${img.url}" alt="${img.alt}" class="item-image" onerror="this.style.display='none';" />`
+                                          )
+                                          .join("");
+                                      }
+                                      return '<div class="no-image">No Image<br>Available</div>';
                                     })()}
                                 </div>
                             </td>
                             <td>
                                 <div class="item-title">${item.title}</div>
                                 <div class="item-details">
-                                    ${item.options && item.options.length > 0 ? `<strong>Options:</strong> ${item.options.join(', ')}<br>` : ''}
-                                    ${item.orderNotes ? `<strong>Notes:</strong> ${item.orderNotes}<br>` : ''}
-                                    ${item.imprintFiles && item.imprintFiles.length > 0 ? `<strong>Imprint Files:</strong> ${item.imprintFiles.length} file(s)<br>` : ''}
-                                    ${item.imprintLocations && item.imprintLocations.length > 0 ? `<strong>Imprint Locations:</strong> ${item.imprintLocations.join(', ')}` : ''}
+                                    ${
+                                      item.options && item.options.length > 0
+                                        ? `<strong>Options:</strong> ${item.options.join(
+                                            ", "
+                                          )}<br>`
+                                        : ""
+                                    }
+                                    ${
+                                      item.orderNotes
+                                        ? `<strong>Notes:</strong> ${item.orderNotes}<br>`
+                                        : ""
+                                    }
+                                    ${
+                                      item.imprintFiles &&
+                                      item.imprintFiles.length > 0
+                                        ? `<strong>Imprint Files:</strong> ${item.imprintFiles.length} file(s)<br>`
+                                        : ""
+                                    }
+                                    ${
+                                      item.imprintLocations &&
+                                      item.imprintLocations.length > 0
+                                        ? `<strong>Imprint Locations:</strong> ${item.imprintLocations.join(
+                                            ", "
+                                          )}`
+                                        : ""
+                                    }
                                 </div>
                             </td>
                             <td>
-                                ${item.sizeAndQuantity ? 
-                                    Object.entries(item.sizeAndQuantity).map(([size, qty]) => 
-                                        `<div class="size-quantity"><strong>${size}:</strong> ${qty}</div>`
-                                    ).join('') :
-                                    `<div class="size-quantity"><strong>Size:</strong> ${item.size || 'N/A'}<br><strong>Qty:</strong> ${item.quantity}</div>`
+                                ${
+                                  item.sizeAndQuantity
+                                    ? Object.entries(item.sizeAndQuantity)
+                                        .map(
+                                          ([size, qty]) =>
+                                            `<div class="size-quantity"><strong>${size}:</strong> ${qty}</div>`
+                                        )
+                                        .join("")
+                                    : `<div class="size-quantity"><strong>Size:</strong> ${
+                                        item.size || "N/A"
+                                      }<br><strong>Qty:</strong> ${
+                                        item.quantity
+                                      }</div>`
                                 }
                             </td>
                             <td>
                                 <div class="color-info">
-                                    ${item.colorsCode ? `<span class="color-swatch" style="background-color: ${item.colorsCode};"></span>` : ''}
+                                    ${
+                                      item.colorsCode
+                                        ? `<span class="color-swatch" style="background-color: ${item.colorsCode};"></span>`
+                                        : ""
+                                    }
                                     <div>
-                                        <strong>${item.colorsName || 'N/A'}</strong>
-                                        ${item.colorsCode ? `<br><small>${item.colorsCode}</small>` : ''}
+                                        <strong>${
+                                          item.colorsName || "N/A"
+                                        }</strong>
+                                        ${
+                                          item.colorsCode
+                                            ? `<br><small>${item.colorsCode}</small>`
+                                            : ""
+                                        }
                                     </div>
                                 </div>
                             </td>
@@ -986,7 +1084,9 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
                                 $${item.totalPrice.toFixed(2)}
                             </td>
                         </tr>
-                        `).join('')}
+                        `
+                          )
+                          .join("")}
                     </tbody>
                 </table>
             </div>
@@ -996,39 +1096,63 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
                 <table class="totals-table">
                     <tr>
                         <td><strong>Subtotal:</strong></td>
-                        <td style="text-align: right; font-weight: 600;">$${order.subtotal.toFixed(2)}</td>
+                        <td style="text-align: right; font-weight: 600;">$${order.subtotal.toFixed(
+                          2
+                        )}</td>
                     </tr>
                     <tr>
                         <td><strong>Tax:</strong></td>
-                        <td style="text-align: right; font-weight: 600;">$${order.tax.toFixed(2)}</td>
+                        <td style="text-align: right; font-weight: 600;">$${order.tax.toFixed(
+                          2
+                        )}</td>
                     </tr>
                     <tr>
                         <td><strong>Shipping:</strong></td>
-                        <td style="text-align: right; font-weight: 600;">$${order.shippingCost.toFixed(2)}</td>
+                        <td style="text-align: right; font-weight: 600;">$${order.shippingCost.toFixed(
+                          2
+                        )}</td>
                     </tr>
-                    ${order.discount > 0 ? `
+                    ${
+                      order.discount > 0
+                        ? `
                     <tr>
                         <td><strong>Discount:</strong></td>
-                        <td style="text-align: right; font-weight: 600; color: #e74c3c;">-$${order.discount.toFixed(2)}</td>
+                        <td style="text-align: right; font-weight: 600; color: #e74c3c;">-$${order.discount.toFixed(
+                          2
+                        )}</td>
                     </tr>
-                    ` : ''}
+                    `
+                        : ""
+                    }
                     <tr class="total-row">
                         <td><strong>TOTAL:</strong></td>
-                        <td style="text-align: right;"><strong>$${order.total.toFixed(2)}</strong></td>
+                        <td style="text-align: right;"><strong>$${order.total.toFixed(
+                          2
+                        )}</strong></td>
                     </tr>
                 </table>
             </div>
             
-            ${order.adminNotes ? `
+            ${
+              order.adminNotes
+                ? `
             <div class="admin-notes">
                 <h3>Admin Notes</h3>
                 <p>${order.adminNotes}</p>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
             
             <div class="footer">
                 <p><strong>Thank you for your business!</strong></p>
-                <p>This invoice was generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} at ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
+                <p>This invoice was generated on ${new Date().toLocaleDateString(
+                  "en-US",
+                  { year: "numeric", month: "long", day: "numeric" }
+                )} at ${new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}</p>
                 <p>For any questions regarding this order, please contact our customer service team.</p>
             </div>
         </div>
@@ -1040,33 +1164,33 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
     console.log("Launching Puppeteer browser...");
     browser = await puppeteer.launch({
       headless: true,
-      executablePath: '/usr/bin/chromium-browser', // Use system Chromium
+      executablePath: "/usr/bin/chromium-browser", // Use system Chromium
       args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding'
-      ]
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--no-first-run",
+        "--no-zygote",
+        "--single-process",
+        "--disable-gpu",
+        "--disable-background-timer-throttling",
+        "--disable-backgrounding-occluded-windows",
+        "--disable-renderer-backgrounding",
+      ],
     });
-    
+
     const page = await browser.newPage();
     console.log("Browser page created");
-    
+
     // Set content
     console.log("Setting HTML content...");
-    await page.setContent(htmlContent, { 
-      waitUntil: 'networkidle0',
-      timeout: 15000 
+    await page.setContent(htmlContent, {
+      waitUntil: "networkidle0",
+      timeout: 15000,
     });
     console.log("HTML content set successfully");
-    
+
     // Wait for images to load if they are included
     if (includeImages) {
       console.log("Waiting for images to load...");
@@ -1075,51 +1199,54 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
         await page.evaluate(() => {
           return Promise.allSettled(
             Array.from(document.images)
-              .filter(img => !img.complete)
-              .map(img => new Promise((resolve, reject) => {
-                const timeout = setTimeout(() => {
-                  console.warn('Image load timeout:', img.src);
-                  resolve(null);
-                }, 8000); // 8 second timeout per image
-                
-                img.onload = () => {
-                  clearTimeout(timeout);
-                  resolve(img);
-                };
-                img.onerror = () => {
-                  clearTimeout(timeout);
-                  console.warn('Image failed to load:', img.src);
-                  resolve(null);
-                };
-              }))
+              .filter((img) => !img.complete)
+              .map(
+                (img) =>
+                  new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                      console.warn("Image load timeout:", img.src);
+                      resolve(null);
+                    }, 8000); // 8 second timeout per image
+
+                    img.onload = () => {
+                      clearTimeout(timeout);
+                      resolve(img);
+                    };
+                    img.onerror = () => {
+                      clearTimeout(timeout);
+                      console.warn("Image failed to load:", img.src);
+                      resolve(null);
+                    };
+                  })
+              )
           );
         });
         console.log("Images loading process completed");
-        
+
         // Additional wait to ensure all images are rendered
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise((resolve) => setTimeout(resolve, 1500));
       } catch (imageError) {
         console.warn("Some images failed to load:", imageError);
       }
     }
-    
+
     // Wait a bit more for everything to render
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     // Generate PDF
     console.log("Generating PDF...");
     const pdfBuffer = await page.pdf({
-      format: 'A4',
+      format: "A4",
       printBackground: true,
       margin: {
-        top: '15px',
-        right: '15px',
-        bottom: '15px',
-        left: '15px'
+        top: "15px",
+        right: "15px",
+        bottom: "15px",
+        left: "15px",
       },
       preferCSSPageSize: false,
       displayHeaderFooter: false,
-      scale: 1.0
+      scale: 1.0,
     });
     console.log("PDF generated successfully");
 
@@ -1134,11 +1261,17 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
     // Check if it's a valid PDF (starts with %PDF)
     const pdfHeader = pdfBuffer.slice(0, 4).toString();
     console.log(`PDF header check: "${pdfHeader}" (expected: "%PDF")`);
-    
-    if (!pdfHeader.startsWith('%PDF')) {
+
+    if (!pdfHeader.startsWith("%PDF")) {
       console.log(`PDF buffer length: ${pdfBuffer.length}`);
-      console.log(`First 20 bytes as string: ${pdfBuffer.slice(0, 20).toString()}`);
-      console.log(`First 20 bytes as array: [${Array.from(pdfBuffer.slice(0, 20)).join(', ')}]`);
+      console.log(
+        `First 20 bytes as string: ${pdfBuffer.slice(0, 20).toString()}`
+      );
+      console.log(
+        `First 20 bytes as array: [${Array.from(pdfBuffer.slice(0, 20)).join(
+          ", "
+        )}]`
+      );
       console.warn("PDF header validation failed, but continuing anyway...");
       // Don't throw error, just log warning and continue
     }
@@ -1147,17 +1280,17 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
 
     // Set response headers for PDF download
     const filename = `order-${order.orderNumber || order._id}.pdf`;
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Content-Length', pdfBuffer.length);
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Pragma', 'no-cache');
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Pragma", "no-cache");
 
     // Send the PDF buffer
     res.end(pdfBuffer);
   } catch (error) {
     console.error("Error generating PDF:", error);
-    
+
     // Ensure browser is closed even if there's an error
     if (browser) {
       try {
@@ -1166,10 +1299,10 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
         console.error("Error closing browser:", closeError);
       }
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       message: "Error generating PDF",
-      error: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      error: process.env.NODE_ENV === "development" ? String(error) : undefined,
     });
   }
 };
@@ -1179,7 +1312,7 @@ export const testPDF = async (req: Request, res: Response) => {
   let browser;
   try {
     console.log("Testing PDF generation...");
-    
+
     const simpleHtml = `
     <!DOCTYPE html>
     <html>
@@ -1197,28 +1330,28 @@ export const testPDF = async (req: Request, res: Response) => {
 
     browser = await puppeteer.launch({
       headless: true,
-      executablePath: '/usr/bin/chromium-browser', // Use system Chromium
+      executablePath: "/usr/bin/chromium-browser", // Use system Chromium
       args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding'
-      ]
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--no-first-run",
+        "--no-zygote",
+        "--single-process",
+        "--disable-gpu",
+        "--disable-background-timer-throttling",
+        "--disable-backgrounding-occluded-windows",
+        "--disable-renderer-backgrounding",
+      ],
     });
-    
+
     const page = await browser.newPage();
-    await page.setContent(simpleHtml, { waitUntil: 'domcontentloaded' });
-    
+    await page.setContent(simpleHtml, { waitUntil: "domcontentloaded" });
+
     const pdfBuffer = await page.pdf({
-      format: 'A4',
-      margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' }
+      format: "A4",
+      margin: { top: "20px", right: "20px", bottom: "20px", left: "20px" },
     });
 
     await browser.close();
@@ -1230,21 +1363,28 @@ export const testPDF = async (req: Request, res: Response) => {
 
     const pdfHeader = pdfBuffer.slice(0, 4).toString();
     console.log(`Test PDF header: "${pdfHeader}"`);
-    
-    if (!pdfHeader.startsWith('%PDF')) {
+
+    if (!pdfHeader.startsWith("%PDF")) {
       console.log(`Test PDF buffer length: ${pdfBuffer.length}`);
-      console.log(`First 20 bytes as string: ${pdfBuffer.slice(0, 20).toString()}`);
-      console.log(`First 20 bytes as array: [${Array.from(pdfBuffer.slice(0, 20)).join(', ')}]`);
-      console.warn("Test PDF header validation failed, but continuing anyway...");
+      console.log(
+        `First 20 bytes as string: ${pdfBuffer.slice(0, 20).toString()}`
+      );
+      console.log(
+        `First 20 bytes as array: [${Array.from(pdfBuffer.slice(0, 20)).join(
+          ", "
+        )}]`
+      );
+      console.warn(
+        "Test PDF header validation failed, but continuing anyway..."
+      );
     }
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename="test.pdf"');
-    res.setHeader('Content-Length', pdfBuffer.length);
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Pragma', 'no-cache');
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'attachment; filename="test.pdf"');
+    res.setHeader("Content-Length", pdfBuffer.length);
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Pragma", "no-cache");
     res.end(pdfBuffer);
-    
   } catch (error) {
     console.error("Test PDF generation failed:", error);
     if (browser) {
@@ -1254,9 +1394,9 @@ export const testPDF = async (req: Request, res: Response) => {
         console.error("Error closing browser:", closeError);
       }
     }
-    res.status(500).json({ 
+    res.status(500).json({
       message: "Test PDF generation failed",
-      error: String(error)
+      error: String(error),
     });
   }
 };
