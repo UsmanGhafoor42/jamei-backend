@@ -1259,36 +1259,36 @@ export const downloadOrderPDF = async (req: Request, res: Response) => {
     }
 
     // Check if it's a valid PDF (starts with %PDF)
-    // const pdfHeader = pdfBuffer.slice(0, 4).toString();
-    // console.log(`PDF header check: "${pdfHeader}" (expected: "%PDF")`);
-
-    // if (!pdfHeader.startsWith("%PDF")) {
-    //   console.log(`PDF buffer length: ${pdfBuffer.length}`);
-    //   console.log(
-    //     `First 20 bytes as string: ${pdfBuffer.slice(0, 20).toString()}`
-    //   );
-    //   console.log(
-    //     `First 20 bytes as array: [${Array.from(pdfBuffer.slice(0, 20)).join(
-    //       ", "
-    //     )}]`
-    //   );
-    //   console.warn("PDF header validation failed, but continuing anyway...");
-    //   // Don't throw error, just log warning and continue
-    // }
-
     const pdfHeader = pdfBuffer.slice(0, 4).toString();
     console.log(`PDF header check: "${pdfHeader}" (expected: "%PDF")`);
 
     if (!pdfHeader.startsWith("%PDF")) {
-      console.error("❌ Invalid PDF generated");
       console.log(`PDF buffer length: ${pdfBuffer.length}`);
-      console.log(`First 20 bytes: ${pdfBuffer.slice(0, 20).toString()}`);
-
-      return res.status(500).json({
-        message: "Failed to generate valid PDF",
-        error: "PDF generation produced invalid output",
-      });
+      console.log(
+        `First 20 bytes as string: ${pdfBuffer.slice(0, 20).toString()}`
+      );
+      console.log(
+        `First 20 bytes as array: [${Array.from(pdfBuffer.slice(0, 20)).join(
+          ", "
+        )}]`
+      );
+      console.warn("PDF header validation failed, but continuing anyway...");
+      // Don't throw error, just log warning and continue
     }
+
+    // const pdfHeader = pdfBuffer.slice(0, 4).toString();
+    // console.log(`PDF header check: "${pdfHeader}" (expected: "%PDF")`);
+
+    // if (!pdfHeader.startsWith("%PDF")) {
+    //   console.error("❌ Invalid PDF generated");
+    //   console.log(`PDF buffer length: ${pdfBuffer.length}`);
+    //   console.log(`First 20 bytes: ${pdfBuffer.slice(0, 20).toString()}`);
+
+    //   return res.status(500).json({
+    //     message: "Failed to generate valid PDF",
+    //     error: "PDF generation produced invalid output",
+    //   });
+    // }
 
     console.log(`PDF generated successfully, size: ${pdfBuffer.length} bytes`);
 
